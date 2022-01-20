@@ -13,6 +13,7 @@
 import os
 import math
 import logging
+from zipfile import ZipFile, is_zipfile
 
 from studiovendor import six
 from studiovendor.Qt import QtGui
@@ -21,6 +22,7 @@ from studiovendor.Qt import QtWidgets
 
 import studioqt
 import studiolibrary
+from studiolibrary.utils import zipCreate
 
 
 logger = logging.getLogger(__name__)
@@ -1371,16 +1373,19 @@ class Item(QtWidgets.QTreeWidgetItem):
 
         movie = None
 
+        if '.anim/sequence' in path:
+            zipCreate(path)
+
         if os.path.isfile(path) and path.lower().endswith(".gif"):
 
             movie = QtGui.QMovie(path)
             movie.setCacheMode(QtGui.QMovie.CacheAll)
             movie.frameChanged.connect(self._frameChanged)
 
-        elif os.path.isdir(path):
+        elif is_zipfile(path+'.zip'):
 
             if not self.imageSequence():
-                movie = studioqt.ImageSequence(path)
+                movie = studioqt.ImageSequence(path+'.zip')
                 movie.frameChanged.connect(self._frameChanged)
 
         if movie:

@@ -25,6 +25,7 @@ import platform
 import threading
 import collections
 import distutils.version
+from zipfile import ZipFile, is_zipfile
 
 from datetime import datetime
 
@@ -1465,6 +1466,19 @@ def showInFolder(path):
 
     logger.info("Call: '%s' with arguments: %s", cmd.__name__, args)
     cmd(*args)
+
+
+def zipCreate(path):
+    """
+    Creating zip from given sequence directory if it is not present.
+
+    :type path: str
+    :rtype: None
+    """
+    if not is_zipfile(path+'.zip'):
+        with ZipFile(path+'.zip', 'a') as zip_seq:
+            for file_zip in os.listdir(path):
+                zip_seq.write(os.path.join(path, file_zip), file_zip)
 
 
 def testNormPath():

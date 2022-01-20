@@ -10,12 +10,16 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library. If not, see <http://www.gnu.org/licenses/>.
 
+import os
+from zipfile import ZipFile, is_zipfile
+
 from studiovendor.Qt import QtGui
 from studiovendor.Qt import QtCore
 from studiovendor.Qt import QtWidgets
 
 from studioqt import ImageSequence
 import studioqt
+from studiolibrary.utils import zipCreate
 
 
 __all__ = ['ImageSequenceWidget']
@@ -193,8 +197,15 @@ class ImageSequenceWidget(QtWidgets.QToolButton):
         
         :type path: str
         """
-        self._imageSequence.setPath(path)
-        self.updateIcon()
+        if '.anim/sequence' in path:
+            zipCreate(path)
+            print('set_path_seq_wid', path+'.zip')
+            self._imageSequence.setPath(path+'.zip')
+            self.updateIcon()
+        else:
+            print('set_path_seq_wid', path)
+            self._imageSequence.setPath(path)
+            self.updateIcon()
 
     def setDirname(self, dirname):
         """
@@ -215,12 +226,15 @@ class ImageSequenceWidget(QtWidgets.QToolButton):
 
     def enterEvent(self, event):
         """
-        Start playing the image sequence when the mouse enters the widget.
+        Start or resume playing the image sequence when the mouse enters the widget.
 
         :type event: QtCore.QEvent
         :rtype: None
         """
-        self._imageSequence.start()
+        if self._imageSequence.paused():
+            self._imageSequence.resume()
+        else:
+            self._imageSequence.start()
         studioqt.fadeIn(self._toolBar, duration=300)
 
     def leaveEvent(self, event):

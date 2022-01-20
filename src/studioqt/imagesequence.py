@@ -12,16 +12,16 @@
 
 import re
 import os
+from zipfile import ZipFile, is_zipfile
+from io import BytesIO
 
 from studiovendor.Qt import QtGui
 from studiovendor.Qt import QtCore
-
 
 __all__ = ['ImageSequence', 'ImageSequenceWidget']
 
 
 class ImageSequence(QtCore.QObject):
-
     DEFAULT_FPS = 24
 
     frameChanged = QtCore.Signal(int)
@@ -35,6 +35,8 @@ class ImageSequence(QtCore.QObject):
         self._frames = []
         self._dirname = None
         self._paused = False
+        self._bytes = BytesIO()
+        self._bytes_read = None
 
         if path:
             self.setPath(path)
@@ -51,35 +53,64 @@ class ImageSequence(QtCore.QObject):
 
     def setPath(self, path):
         """
-        Set a single frame or a directory to an image sequence.
-        
+        Set a single frame or a zip or a directory to an image sequence.
         :type path: str
         """
-        if os.path.isfile(path):
+        print('set_path', path)
+        if is_zipfile(path):
+            self.setZipfile(path)
+        elif os.path.isfile(path):
             self._frame = 0
             self._frames = [path]
         elif os.path.isdir(path):
             self.setDirname(path)
 
+    def setZipfile(self, zip_sequence):
+        """
+        Set the location to the image sequence in zip.
+
+        :type zip_sequence: str
+        :rtype: None
+        """
+        print('set_zipfile', zip_sequence)
+
+        def setBytes(zip_file):
+            """
+            Fill BytesIO object buffer from zip file
+            for reading the sequence from memory.
+            """
+            with ZipFile(zip_file, 'r') as zip_file:
+                self._frames = [filename for filename in zip_file.namelist()]
+                with ZipFile(self._bytes, 'a') as mem:
+                    for name_file in self._frames:
+                        mem.writestr(name_file, zip_file.read(name_file))
+            self._bytes_read = ZipFile(self._bytes, 'r')
+
+        self._dirname = zip_sequence
+        if is_zipfile(zip_sequence):
+            setBytes(zip_sequence)
+            self.naturalSortItems(self._frames)
+
     def setDirname(self, dirname):
         """
-        Set the location to the image sequence.
-
+        Set the location to the image sequence in directory.
         :type dirname: str
         :rtype: None
         """
-        def naturalSortItems(items):
-            """
-            Sort the given list in the way that humans expect.
-            """
-            convert = lambda text: int(text) if text.isdigit() else text
-            alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-            items.sort(key=alphanum_key)
-
         self._dirname = dirname
         if os.path.isdir(dirname):
             self._frames = [dirname + "/" + filename for filename in os.listdir(dirname)]
-            naturalSortItems(self._frames)
+            self.naturalSortItems(self._frames)
+
+    def naturalSortItems(self, items):
+        """
+        Sort the given list in the way that humans expect.
+        :type items: list
+        :rtype: None
+        """
+        convert = lambda text: int(text) if text.isdigit() else text
+        alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+        items.sort(key=alphanum_key)
 
     def dirname(self):
         """
@@ -101,6 +132,9 @@ class ImageSequence(QtCore.QObject):
             self._timer.timeout.connect(self._frameChanged)
 
         if not self._paused:
+            self._bytes.close()
+            self._bytes = BytesIO()
+            self._bytes_read = None
             self._frame = 0
         self._timer.stop()
 
@@ -112,6 +146,14 @@ class ImageSequence(QtCore.QObject):
         """
         self._paused = True
         self._timer.stop()
+
+    def paused(self):
+        """
+        Return paused state of the image sequence playing.
+
+        :rtype: bool
+        """
+        return self._paused
 
     def resume(self):
         """
@@ -129,6 +171,9 @@ class ImageSequence(QtCore.QObject):
 
         :rtype: None
         """
+        self._bytes.close()
+        self._bytes = BytesIO()
+        self._bytes_read = None
         self._timer.stop()
 
     def start(self):
@@ -138,6 +183,8 @@ class ImageSequence(QtCore.QObject):
         :rtype: None
         """
         self.reset()
+        if self._dirname:
+            self.setPath(self._dirname)
         if self._timer:
             self._timer.start(1000.0 / self._fps)
 
@@ -188,7 +235,7 @@ class ImageSequence(QtCore.QObject):
 
         :rtype: QtGui.QIcon
         """
-        return QtGui.QIcon(self.currentFilename())
+        return QtGui.QIcon(self.currentPixmap())
 
     def currentPixmap(self):
         """
@@ -196,7 +243,15 @@ class ImageSequence(QtCore.QObject):
 
         :rtype: QtGui.QPixmap
         """
-        return QtGui.QPixmap(self.currentFilename())
+        if self._dirname and is_zipfile(self._dirname):
+            read = self._bytes_read.read(self.currentFilename())
+            pixmap = QtGui.QPixmap()
+            pixmap.loadFromData(read)
+            return pixmap
+        else:
+            pixmap = QtGui.QPixmap()
+            pixmap.load(self.currentFilename())
+            return pixmap
 
     def currentFilename(self):
         """
