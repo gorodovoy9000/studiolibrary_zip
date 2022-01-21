@@ -22,7 +22,7 @@ from studiovendor.Qt import QtWidgets
 
 import studioqt
 import studiolibrary
-from studiolibrary.utils import zipCreate
+from studiolibrary import utils
 
 
 logger = logging.getLogger(__name__)
@@ -1373,19 +1373,23 @@ class Item(QtWidgets.QTreeWidgetItem):
 
         movie = None
 
-        if '.anim/sequence' in path:
-            zipCreate(path)
-
         if os.path.isfile(path) and path.lower().endswith(".gif"):
 
             movie = QtGui.QMovie(path)
             movie.setCacheMode(QtGui.QMovie.CacheAll)
             movie.frameChanged.connect(self._frameChanged)
 
-        elif is_zipfile(path+'.zip'):
+        elif utils.envNewZip and '.anim/sequence' in path:
+            utils.zipCreate(path)
 
             if not self.imageSequence():
                 movie = studioqt.ImageSequence(path+'.zip')
+                movie.frameChanged.connect(self._frameChanged)
+
+        else:
+
+            if not self.imageSequence():
+                movie = studioqt.ImageSequence(path)
                 movie.frameChanged.connect(self._frameChanged)
 
         if movie:

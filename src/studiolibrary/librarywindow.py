@@ -1325,6 +1325,10 @@ class LibraryWindow(QtWidgets.QWidget):
         action.triggered[bool].connect(self.setDebugMode)
         menu.addAction(action)
 
+        if studiolibrary.utils.envNewZip:
+            action = menu.addAction("Make ZIP")
+            action.triggered.connect(self.makeZip)
+
         action = QtWidgets.QAction("Report Issue", menu)
         action.triggered.connect(self.reportIssue)
         menu.addAction(action)
@@ -2774,3 +2778,10 @@ class LibraryWindow(QtWidgets.QWidget):
         :rtype: bool
         """
         return self._isDebug
+
+    def makeZip(self):
+        """Make 'sequence.zip' from 'sequence' dirs
+        in all current library '.anim' items."""
+        print("ZIP btn pushed")
+        studiolibrary.utils.zipAllLib(self._path)
+        print("ZIP work done!")

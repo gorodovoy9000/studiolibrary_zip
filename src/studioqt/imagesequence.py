@@ -87,9 +87,8 @@ class ImageSequence(QtCore.QObject):
             self._bytes_read = ZipFile(self._bytes, 'r')
 
         self._dirname = zip_sequence
-        if is_zipfile(zip_sequence):
-            setBytes(zip_sequence)
-            self.naturalSortItems(self._frames)
+        setBytes(zip_sequence)
+        self.naturalSortItems(self._frames)
 
     def setDirname(self, dirname):
         """

@@ -1468,6 +1468,14 @@ def showInFolder(path):
     cmd(*args)
 
 
+def getEnvVersion():
+    if os.getenv('STUDIOLIBRARY_NEW') == 'TRUE':
+        print('found STUDIOLIBRARY_NEW env')
+        return True
+    print('STUDIOLIBRARY_NEW env not found')
+    return False
+
+
 def zipCreate(path):
     """
     Creating zip from given sequence directory if it is not present.
@@ -1476,9 +1484,25 @@ def zipCreate(path):
     :rtype: None
     """
     if not is_zipfile(path+'.zip'):
+        print("Creating zip", path + '.zip')
         with ZipFile(path+'.zip', 'a') as zip_seq:
             for file_zip in os.listdir(path):
                 zip_seq.write(os.path.join(path, file_zip), file_zip)
+        print("Zip created", path + '.zip')
+
+
+def zipAllLib(path):
+    """
+    Walk through given path recursively and create zip files from 'sequence'
+    dirs in '.anim' dirs.
+
+    :type path: str
+    :rtype: None
+
+    """
+    for item in os.walk(path):
+        if item[0][-5:] == ".anim" and "sequence" in item[1]:
+            zipCreate(os.path.join(item[0], "sequence"))
 
 
 def testNormPath():
@@ -1688,6 +1712,8 @@ def runTests():
     testRelativePaths()
     testNormPath()
 
+
+envNewZip = getEnvVersion()
 
 if __name__ == "__main__":
     runTests()

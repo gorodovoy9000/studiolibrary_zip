@@ -19,7 +19,7 @@ from studiovendor.Qt import QtWidgets
 
 from studioqt import ImageSequence
 import studioqt
-from studiolibrary.utils import zipCreate
+from studiolibrary import utils
 
 
 __all__ = ['ImageSequenceWidget']
@@ -197,8 +197,8 @@ class ImageSequenceWidget(QtWidgets.QToolButton):
         
         :type path: str
         """
-        if '.anim/sequence' in path:
-            zipCreate(path)
+        if utils.envNewZip and '.anim/sequence' in path:
+            utils.zipCreate(path)
             print('set_path_seq_wid', path+'.zip')
             self._imageSequence.setPath(path+'.zip')
             self.updateIcon()
