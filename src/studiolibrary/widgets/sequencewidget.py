@@ -199,11 +199,9 @@ class ImageSequenceWidget(QtWidgets.QToolButton):
         """
         if utils.envNewZip and '.anim/sequence' in path:
             utils.zipCreate(path)
-            print('set_path_seq_wid', path+'.zip')
             self._imageSequence.setPath(path+'.zip')
             self.updateIcon()
         else:
-            print('set_path_seq_wid', path)
             self._imageSequence.setPath(path)
             self.updateIcon()
 

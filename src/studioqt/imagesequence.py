@@ -56,7 +56,6 @@ class ImageSequence(QtCore.QObject):
         Set a single frame or a zip or a directory to an image sequence.
         :type path: str
         """
-        print('set_path', path)
         if is_zipfile(path):
             self.setZipfile(path)
         elif os.path.isfile(path):
@@ -72,7 +71,6 @@ class ImageSequence(QtCore.QObject):
         :type zip_sequence: str
         :rtype: None
         """
-        print('set_zipfile', zip_sequence)
 
         def setBytes(zip_file):
             """
